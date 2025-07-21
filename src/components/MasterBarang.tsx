@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Plus, Search, Edit, Trash2, Package } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Package, Calendar } from "lucide-react";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -18,15 +19,17 @@ interface Item {
   satuan: string;
   stok_minimal: number;
   aktif: boolean;
+  no_batch?: string;
+  kadaluarsa?: Date;
   deskripsi?: string;
 }
 
 const mockItems: Item[] = [
-  { id: "1", kode: "AMX001", nama: "Amoxicillin 500mg", kategori: "Antibiotik", satuan: "tablet", stok_minimal: 100, aktif: true },
-  { id: "2", kode: "PCT001", nama: "Paracetamol 500mg", kategori: "Analgesik", satuan: "tablet", stok_minimal: 200, aktif: true },
-  { id: "3", kode: "CTM001", nama: "CTM 4mg", kategori: "Antihistamin", satuan: "tablet", stok_minimal: 50, aktif: true },
-  { id: "4", kode: "ORS001", nama: "Oralit", kategori: "Elektrolit", satuan: "sachet", stok_minimal: 100, aktif: true },
-  { id: "5", kode: "BTD001", nama: "Betadine 10ml", kategori: "Antiseptik", satuan: "botol", stok_minimal: 25, aktif: false },
+  { id: "1", kode: "AMX001", nama: "Amoxicillin 500mg", kategori: "Antibiotik", satuan: "tablet", stok_minimal: 100, aktif: true, no_batch: "B001", kadaluarsa: new Date("2025-12-31") },
+  { id: "2", kode: "PCT001", nama: "Paracetamol 500mg", kategori: "Analgesik", satuan: "tablet", stok_minimal: 200, aktif: true, no_batch: "B002", kadaluarsa: new Date("2026-06-15") },
+  { id: "3", kode: "CTM001", nama: "CTM 4mg", kategori: "Antihistamin", satuan: "tablet", stok_minimal: 50, aktif: true, no_batch: "B003", kadaluarsa: new Date("2025-03-20") },
+  { id: "4", kode: "ORS001", nama: "Oralit", kategori: "Elektrolit", satuan: "sachet", stok_minimal: 100, aktif: true, no_batch: "B004", kadaluarsa: new Date("2027-01-10") },
+  { id: "5", kode: "BTD001", nama: "Betadine 10ml", kategori: "Antiseptik", satuan: "botol", stok_minimal: 25, aktif: false, no_batch: "B005", kadaluarsa: new Date("2025-09-30") },
 ];
 
 export function MasterBarang() {
@@ -43,7 +46,7 @@ export function MasterBarang() {
   );
 
   const handleSave = () => {
-    if (!formData.nama || !formData.kode || !formData.kategori) {
+    if (!formData.nama || !formData.kode || !formData.kategori || !formData.no_batch) {
       toast({
         title: "Error",
         description: "Harap lengkapi semua field yang diperlukan",
@@ -184,6 +187,24 @@ export function MasterBarang() {
                   placeholder="Masukkan stok minimal"
                 />
               </div>
+              <div>
+                <Label htmlFor="no_batch">No. Batch</Label>
+                <Input
+                  id="no_batch"
+                  value={formData.no_batch || ""}
+                  onChange={(e) => setFormData({...formData, no_batch: e.target.value})}
+                  placeholder="Masukkan nomor batch"
+                />
+              </div>
+              <div>
+                <Label htmlFor="kadaluarsa">Tanggal Kadaluarsa</Label>
+                <Input
+                  id="kadaluarsa"
+                  type="date"
+                  value={formData.kadaluarsa ? format(formData.kadaluarsa, "yyyy-MM-dd") : ""}
+                  onChange={(e) => setFormData({...formData, kadaluarsa: e.target.value ? new Date(e.target.value) : undefined})}
+                />
+              </div>
               <div className="flex justify-end gap-2 pt-4">
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Batal
@@ -223,6 +244,8 @@ export function MasterBarang() {
                 <TableHead>Nama Barang</TableHead>
                 <TableHead>Kategori</TableHead>
                 <TableHead>Satuan</TableHead>
+                <TableHead>No. Batch</TableHead>
+                <TableHead>Kadaluarsa</TableHead>
                 <TableHead>Stok Minimal</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Aksi</TableHead>
@@ -235,6 +258,17 @@ export function MasterBarang() {
                   <TableCell className="font-medium">{item.nama}</TableCell>
                   <TableCell>{item.kategori}</TableCell>
                   <TableCell>{item.satuan}</TableCell>
+                  <TableCell className="font-mono">{item.no_batch || "-"}</TableCell>
+                  <TableCell>
+                    {item.kadaluarsa ? (
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">
+                          {format(item.kadaluarsa, "dd/MM/yyyy")}
+                        </span>
+                      </div>
+                    ) : "-"}
+                  </TableCell>
                   <TableCell>{item.stok_minimal}</TableCell>
                   <TableCell>
                     <Badge variant={item.aktif ? "default" : "secondary"}>
