@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DashboardCard } from "./DashboardCard";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { usePagination } from "@/hooks/usePagination";
 
 interface ExpiredAlert {
   id: string;
@@ -124,6 +126,20 @@ export function AlertKadaluarsa() {
     
     return matchesSearch && matchesPriority && matchesLocation;
   });
+
+  const {
+    currentPage,
+    totalPages,
+    hasNextPage,
+    hasPreviousPage,
+    paginatedData: paginatedAlerts,
+    goToPage,
+    goToNextPage,
+    goToPreviousPage,
+    totalItems,
+    startIndex,
+    endIndex
+  } = usePagination<ExpiredAlert>({ data: filteredAlerts, itemsPerPage: 10 });
 
   const criticalAlerts = filteredAlerts.filter(alert => alert.priority === "critical").length;
   const warningAlerts = filteredAlerts.filter(alert => alert.priority === "warning").length;

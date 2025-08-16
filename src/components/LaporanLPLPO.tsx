@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DashboardCard } from "./DashboardCard";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { usePagination } from "@/hooks/usePagination";
 
 interface LPLPOData {
   id: string;
@@ -115,6 +117,20 @@ export function LaporanLPLPO() {
     item.item_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.item_code.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const {
+    currentPage,
+    totalPages,
+    hasNextPage,
+    hasPreviousPage,
+    paginatedData: paginatedData,
+    goToPage,
+    goToNextPage,
+    goToPreviousPage,
+    totalItems,
+    startIndex,
+    endIndex
+  } = usePagination<LPLPOData>({ data: filteredData, itemsPerPage: 10 });
 
   const totalItems = filteredData.length;
   const totalStokAwal = filteredData.reduce((sum, item) => sum + item.stok_awal, 0);
@@ -265,10 +281,15 @@ export function LaporanLPLPO() {
       {/* LPLPO Table */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-primary" />
-            LPLPO Bulan {months.find(m => m.value === selectedMonth)?.label} {selectedYear}
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              <CardTitle>LPLPO Bulan {months.find(m => m.value === selectedMonth)?.label} {selectedYear}</CardTitle>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              Menampilkan {startIndex}-{endIndex} dari {totalItems} item
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -289,7 +310,7 @@ export function LaporanLPLPO() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredData.map((item) => (
+                {paginatedData.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell className="font-mono">{item.item_code}</TableCell>
                     <TableCell className="font-medium">{item.item_name}</TableCell>
@@ -311,10 +332,44 @@ export function LaporanLPLPO() {
                       </Button>
                     </TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+              ))}
+            </TableBody>
+          </Table>
+          
+          {totalPages > 1 && (
+            <div className="mt-4">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={goToPreviousPage}
+                      className={hasPreviousPage ? "cursor-pointer" : "cursor-not-allowed opacity-50"}
+                    />
+                  </PaginationItem>
+                  
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <PaginationItem key={page}>
+                      <PaginationLink
+                        onClick={() => goToPage(page)}
+                        isActive={page === currentPage}
+                        className="cursor-pointer"
+                      >
+                        {page}
+                      </PaginationLink>
+                    </PaginationItem>
+                  ))}
+                  
+                  <PaginationItem>
+                    <PaginationNext 
+                      onClick={goToNextPage}
+                      className={hasNextPage ? "cursor-pointer" : "cursor-not-allowed opacity-50"}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
+        </div>
         </CardContent>
       </Card>
 

@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { DashboardCard } from "./DashboardCard";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { usePagination } from "@/hooks/usePagination";
 
 interface StockEntry {
   id: string;
@@ -69,7 +71,21 @@ export function Gudang() {
   const [formData, setFormData] = useState<Partial<StockEntry>>({});
   const { toast } = useToast();
 
-  const totalItems = stockEntries.length;
+  const {
+    currentPage,
+    totalPages,
+    hasNextPage,
+    hasPreviousPage,
+    paginatedData: paginatedEntries,
+    goToPage,
+    goToNextPage,
+    goToPreviousPage,
+    totalItems,
+    startIndex,
+    endIndex
+  } = usePagination({ data: stockEntries, itemsPerPage: 10 });
+
+  const totalStockItems = stockEntries.length;
   const totalQuantity = stockEntries.reduce((sum, entry) => sum + entry.quantity, 0);
   const expiringStock = stockEntries.filter(entry => {
     const expiredDate = new Date(entry.expired_date);
@@ -226,7 +242,7 @@ export function Gudang() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <DashboardCard
           title="Total Item"
-          value={totalItems.toString()}
+          value={totalStockItems.toString()}
           subtitle="jenis barang"
           icon={Package}
           trend={{ value: "+5%", isPositive: true }}
@@ -249,9 +265,14 @@ export function Gudang() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-primary" />
-            <CardTitle>Riwayat Barang Masuk</CardTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-primary" />
+              <CardTitle>Riwayat Barang Masuk</CardTitle>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              Menampilkan {startIndex}-{endIndex} dari {totalItems} data
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -269,7 +290,7 @@ export function Gudang() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {stockEntries.map((entry) => {
+              {paginatedEntries.map((entry) => {
                 const expiryStatus = getExpiryStatus(entry.expired_date);
                 return (
                   <TableRow key={entry.id}>
@@ -290,6 +311,40 @@ export function Gudang() {
               })}
             </TableBody>
           </Table>
+          
+          {totalPages > 1 && (
+            <div className="mt-4">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={goToPreviousPage}
+                      className={hasPreviousPage ? "cursor-pointer" : "cursor-not-allowed opacity-50"}
+                    />
+                  </PaginationItem>
+                  
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <PaginationItem key={page}>
+                      <PaginationLink
+                        onClick={() => goToPage(page)}
+                        isActive={page === currentPage}
+                        className="cursor-pointer"
+                      >
+                        {page}
+                      </PaginationLink>
+                    </PaginationItem>
+                  ))}
+                  
+                  <PaginationItem>
+                    <PaginationNext 
+                      onClick={goToNextPage}
+                      className={hasNextPage ? "cursor-pointer" : "cursor-not-allowed opacity-50"}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

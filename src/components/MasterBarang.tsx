@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Search, Edit, Trash2, Package, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { usePagination } from "@/hooks/usePagination";
 
 interface Item {
   id: string;
@@ -45,6 +47,25 @@ export function MasterBarang() {
     item.kode.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const {
+    currentPage,
+    totalPages,
+    hasNextPage,
+    hasPreviousPage,
+    paginatedData: paginatedItems,
+    goToPage,
+    goToNextPage,
+    goToPreviousPage,
+    resetPagination,
+    totalItems,
+    startIndex,
+    endIndex
+  } = usePagination<Item>({ data: filteredItems, itemsPerPage: 10 });
+
+  useEffect(() => {
+    resetPagination();
+  }, [searchTerm, resetPagination]);
+
   const handleSave = () => {
     if (!formData.nama || !formData.kode || !formData.kategori || !formData.no_batch) {
       toast({
@@ -74,6 +95,8 @@ export function MasterBarang() {
         satuan: formData.satuan || "buah",
         stok_minimal: formData.stok_minimal || 0,
         aktif: formData.aktif ?? true,
+        no_batch: formData.no_batch,
+        kadaluarsa: formData.kadaluarsa,
         deskripsi: formData.deskripsi
       };
       setItems([...items, newItem]);
@@ -220,11 +243,16 @@ export function MasterBarang() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Package className="h-5 w-5 text-primary" />
-              <CardTitle>Daftar Barang ({filteredItems.length})</CardTitle>
+              <CardTitle>Daftar Barang</CardTitle>
             </div>
+            <div className="text-sm text-muted-foreground">
+              Menampilkan {startIndex}-{endIndex} dari {totalItems} barang
+            </div>
+          </div>
+          <div className="flex items-center gap-4 mt-4">
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -246,13 +274,13 @@ export function MasterBarang() {
                 <TableHead>Satuan</TableHead>
                 <TableHead>No. Batch</TableHead>
                 <TableHead>Kadaluarsa</TableHead>
-                <TableHead>Stok Minimal</TableHead>
+                <TableHead>Stok Min</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredItems.map((item) => (
+              {paginatedItems.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell className="font-mono">{item.kode}</TableCell>
                   <TableCell className="font-medium">{item.nama}</TableCell>
@@ -297,6 +325,40 @@ export function MasterBarang() {
               ))}
             </TableBody>
           </Table>
+          
+          {totalPages > 1 && (
+            <div className="mt-4">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={goToPreviousPage}
+                      className={hasPreviousPage ? "cursor-pointer" : "cursor-not-allowed opacity-50"}
+                    />
+                  </PaginationItem>
+                  
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <PaginationItem key={page}>
+                      <PaginationLink
+                        onClick={() => goToPage(page)}
+                        isActive={page === currentPage}
+                        className="cursor-pointer"
+                      >
+                        {page}
+                      </PaginationLink>
+                    </PaginationItem>
+                  ))}
+                  
+                  <PaginationItem>
+                    <PaginationNext 
+                      onClick={goToNextPage}
+                      className={hasNextPage ? "cursor-pointer" : "cursor-not-allowed opacity-50"}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

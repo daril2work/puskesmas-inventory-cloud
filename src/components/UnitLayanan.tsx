@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { DashboardCard } from "./DashboardCard";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { usePagination } from "@/hooks/usePagination";
 
 interface Unit {
   id: string;
@@ -75,6 +77,20 @@ export function UnitLayanan() {
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
   const [formData, setFormData] = useState<Partial<Unit>>({});
   const { toast } = useToast();
+
+  const {
+    currentPage,
+    totalPages,
+    hasNextPage,
+    hasPreviousPage,
+    paginatedData: paginatedUnits,
+    goToPage,
+    goToNextPage,
+    goToPreviousPage,
+    totalItems,
+    startIndex,
+    endIndex
+  } = usePagination({ data: units, itemsPerPage: 10 });
 
   const totalUnits = units.length;
   const activeUnits = units.filter(unit => unit.aktif).length;
@@ -247,9 +263,14 @@ export function UnitLayanan() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-2">
-            <Building2 className="h-5 w-5 text-primary" />
-            <CardTitle>Daftar Unit Layanan</CardTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-primary" />
+              <CardTitle>Daftar Unit Layanan</CardTitle>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              Menampilkan {startIndex}-{endIndex} dari {totalItems} unit
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -266,7 +287,7 @@ export function UnitLayanan() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {units.map((unit) => (
+              {paginatedUnits.map((unit) => (
                 <TableRow key={unit.id}>
                   <TableCell className="font-mono">{unit.kode}</TableCell>
                   <TableCell className="font-medium">{unit.nama}</TableCell>
@@ -300,6 +321,40 @@ export function UnitLayanan() {
               ))}
             </TableBody>
           </Table>
+          
+          {totalPages > 1 && (
+            <div className="mt-4">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={goToPreviousPage}
+                      className={hasPreviousPage ? "cursor-pointer" : "cursor-not-allowed opacity-50"}
+                    />
+                  </PaginationItem>
+                  
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <PaginationItem key={page}>
+                      <PaginationLink
+                        onClick={() => goToPage(page)}
+                        isActive={page === currentPage}
+                        className="cursor-pointer"
+                      >
+                        {page}
+                      </PaginationLink>
+                    </PaginationItem>
+                  ))}
+                  
+                  <PaginationItem>
+                    <PaginationNext 
+                      onClick={goToNextPage}
+                      className={hasNextPage ? "cursor-pointer" : "cursor-not-allowed opacity-50"}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

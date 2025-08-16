@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { DashboardCard } from "./DashboardCard";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { usePagination } from "@/hooks/usePagination";
 
 interface Distribution {
   id: string;
@@ -77,6 +79,20 @@ export function Distribusi() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState<Partial<Distribution>>({});
   const { toast } = useToast();
+
+  const {
+    currentPage,
+    totalPages,
+    hasNextPage,
+    hasPreviousPage,
+    paginatedData: paginatedDistributions,
+    goToPage,
+    goToNextPage,
+    goToPreviousPage,
+    totalItems,
+    startIndex,
+    endIndex
+  } = usePagination({ data: distributions, itemsPerPage: 10 });
 
   const totalDistributions = distributions.length;
   const pendingDistributions = distributions.filter(d => d.status === "pending").length;
@@ -278,9 +294,14 @@ export function Distribusi() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-2">
-            <ArrowRight className="h-5 w-5 text-primary" />
-            <CardTitle>Riwayat Distribusi</CardTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ArrowRight className="h-5 w-5 text-primary" />
+              <CardTitle>Riwayat Distribusi</CardTitle>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              Menampilkan {startIndex}-{endIndex} dari {totalItems} distribusi
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -298,7 +319,7 @@ export function Distribusi() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {distributions.map((dist) => (
+              {paginatedDistributions.map((dist) => (
                 <TableRow key={dist.id}>
                   <TableCell>{new Date(dist.date).toLocaleDateString('id-ID')}</TableCell>
                   <TableCell className="font-medium">{dist.item_name}</TableCell>
@@ -331,6 +352,40 @@ export function Distribusi() {
               ))}
             </TableBody>
           </Table>
+          
+          {totalPages > 1 && (
+            <div className="mt-4">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={goToPreviousPage}
+                      className={hasPreviousPage ? "cursor-pointer" : "cursor-not-allowed opacity-50"}
+                    />
+                  </PaginationItem>
+                  
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <PaginationItem key={page}>
+                      <PaginationLink
+                        onClick={() => goToPage(page)}
+                        isActive={page === currentPage}
+                        className="cursor-pointer"
+                      >
+                        {page}
+                      </PaginationLink>
+                    </PaginationItem>
+                  ))}
+                  
+                  <PaginationItem>
+                    <PaginationNext 
+                      onClick={goToNextPage}
+                      className={hasNextPage ? "cursor-pointer" : "cursor-not-allowed opacity-50"}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

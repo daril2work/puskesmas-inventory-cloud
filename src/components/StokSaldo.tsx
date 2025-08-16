@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DashboardCard } from "./DashboardCard";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { usePagination } from "@/hooks/usePagination";
 
 interface StockBalance {
   id: string;
@@ -122,7 +124,21 @@ export function StokSaldo() {
     return matchesSearch;
   });
 
-  const totalItems = stockBalances.length;
+  const {
+    currentPage,
+    totalPages,
+    hasNextPage,
+    hasPreviousPage,
+    paginatedData: paginatedStocks,
+    goToPage,
+    goToNextPage,
+    goToPreviousPage,
+    totalItems,
+    startIndex,
+    endIndex
+  } = usePagination<StockBalance>({ data: filteredStocks, itemsPerPage: 10 });
+
+  const totalStockItems = stockBalances.length;
   const lowStockItems = stockBalances.filter(stock => stock.total_qty <= stock.min_stock).length;
   const totalValue = stockBalances.reduce((sum, stock) => sum + stock.nilai_persediaan, 0);
   const expiringItems = stockBalances.filter(stock => {
@@ -161,7 +177,7 @@ export function StokSaldo() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <DashboardCard
           title="Total Item"
-          value={totalItems.toString()}
+          value={totalStockItems.toString()}
           subtitle="jenis barang"
           icon={Package}
           trend={{ value: "Complete", isPositive: true }}
@@ -196,16 +212,19 @@ export function StokSaldo() {
               <Package className="h-5 w-5 text-primary" />
               <CardTitle>Saldo Stok Real Time</CardTitle>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Cari barang..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-64"
-                />
-              </div>
+            <div className="text-sm text-muted-foreground">
+              Menampilkan {startIndex}-{endIndex} dari {totalItems} stok
+            </div>
+          </div>
+          <div className="flex items-center gap-4 mt-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Cari barang..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 w-64"
+              />
             </div>
           </div>
         </CardHeader>
@@ -227,7 +246,7 @@ export function StokSaldo() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredStocks.map((stock) => {
+              {paginatedStocks.map((stock) => {
                 const status = getStockStatus(stock.total_qty, stock.min_stock);
                 return (
                   <TableRow key={stock.id}>
@@ -257,6 +276,40 @@ export function StokSaldo() {
               })}
             </TableBody>
           </Table>
+          
+          {totalPages > 1 && (
+            <div className="mt-4">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={goToPreviousPage}
+                      className={hasPreviousPage ? "cursor-pointer" : "cursor-not-allowed opacity-50"}
+                    />
+                  </PaginationItem>
+                  
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <PaginationItem key={page}>
+                      <PaginationLink
+                        onClick={() => goToPage(page)}
+                        isActive={page === currentPage}
+                        className="cursor-pointer"
+                      >
+                        {page}
+                      </PaginationLink>
+                    </PaginationItem>
+                  ))}
+                  
+                  <PaginationItem>
+                    <PaginationNext 
+                      onClick={goToNextPage}
+                      className={hasNextPage ? "cursor-pointer" : "cursor-not-allowed opacity-50"}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </CardContent>
       </Card>
 
